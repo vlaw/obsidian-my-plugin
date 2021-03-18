@@ -1,3 +1,4 @@
+# My Obsidian Plugin
 ## Obsidian Sample Plugin
 
 This is a sample plugin for Obsidian (https://obsidian.md).
@@ -53,3 +54,16 @@ Quick starting guide for new plugin devs:
 ### API Documentation
 
 See https://github.com/obsidianmd/obsidian-api
+
+## TODO
+
+### 约定
+
+1. md: XXXXXX-YYYYYY
+2. assets: assets/XXXXXX-YYYYYY/[md5].{suffix}
+### refactor
+
+
+
+- [ ] "rename assets by md5" ()
+- [ ] "extract assets in md into assets/ID folder"
