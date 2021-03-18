@@ -12,16 +12,20 @@ export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
 
 	async onload() {
-		console.log('loading plugin');
+		console.log('loading MY plugin');
 
 		await this.loadSettings();
 
+		// RibbonIcon: 左侧侧边栏 icon
 		this.addRibbonIcon('dice', 'Sample Plugin', () => {
+			//  Notice: 右上方通知栏
 			new Notice('This is a notice!');
 		});
 
+		// StatusBarItem: 右下方状态栏
 		this.addStatusBarItem().setText('Status Bar Text');
 
+		// 命令绑定, command palette => "My Plugin: Open Sample Modal"
 		this.addCommand({
 			id: 'open-sample-modal',
 			name: 'Open Sample Modal',
@@ -67,6 +71,7 @@ export default class MyPlugin extends Plugin {
 }
 
 class SampleModal extends Modal {
+	// 模态窗口
 	constructor(app: App) {
 		super(app);
 	}
@@ -83,6 +88,7 @@ class SampleModal extends Modal {
 }
 
 class SampleSettingTab extends PluginSettingTab {
+	// 插件配置 Tab
 	plugin: MyPlugin;
 
 	constructor(app: App, plugin: MyPlugin) {
@@ -95,7 +101,7 @@ class SampleSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Settings for my awesome plugin.'});
+		containerEl.createEl('h2', {text: 'Settings for my awesome plugin.(vlaw)'});
 
 		new Setting(containerEl)
 			.setName('Setting #1')
