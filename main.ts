@@ -1,4 +1,6 @@
 import {App, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
+import { compareAsc, format } from 'date-fns';
+import * as _ from "lodash";
 
 interface MyPluginSettings {
 	mySetting: string;
@@ -7,25 +9,50 @@ interface MyPluginSettings {
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: 'default'
 }
-
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
 
 	async onload() {
-		console.log('loading MY plugin');
+		console.log(`loading plugin: ${this.manifest.name}(${this.manifest.id}): ${this.manifest.version} ts: ${new Date()}`);
 
 		await this.loadSettings();
 
-		// RibbonIcon: 左侧侧边栏 icon
-		this.addRibbonIcon('dice', 'Sample Plugin', () => {
-			//  Notice: 右上方通知栏
-			new Notice('This is a notice!');
-		});
+		// // RibbonIcon: 左侧侧边栏 icon
+		// this.addRibbonIcon('dice', 'Sample Plugin', () => {
+		// 	//  Notice: 右上方通知栏
+		// 	new Notice('This is a notice!');
+		// });
 
-		// StatusBarItem: 右下方状态栏
-		this.addStatusBarItem().setText('Status Bar Text');
+		// // StatusBarItem: 右下方状态栏
+		// this.addStatusBarItem().setText('Status Bar Text');
 
-		// 命令绑定, command palette => "My Plugin: Open Sample Modal"
+        // 命令绑定, command palette => "My Plugin: Rename md by zk"
+        // TODO: 需要通过 settings Tab 做一个ZK-Prefix 的模板
+        const ZK_RE = /^\d{6}\-\d{6} /;
+        this.addCommand({
+            id: "rename-md-by-zk",
+            name: "Rename md by zk",
+            checkCallback: (checking: boolean) => {
+                let tFile = this.app.workspace.getActiveFile();
+                // 打开文件是 markdown 文件才有可能需要这个命令
+                if (tFile && tFile.extension == 'md') {
+                    if (!checking) {
+                        let fileName = tFile.name;
+                        // match
+                        let match = fileName.match(ZK_RE);
+                        if (!match) {
+                            let zkPrefix = this.build_zk_prefix();
+                            let newFileName = `${zkPrefix} ${fileName}`;
+                            this.app.vault.adapter.rename(tFile.path, newFileName);
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        // 命令绑定, command palette => "My Plugin: Open Sample Modal"
 		this.addCommand({
 			id: 'open-sample-modal',
 			name: 'Open Sample Modal',
@@ -43,8 +70,6 @@ export default class MyPlugin extends Plugin {
                 const vault_adaptor = vault.adapter;
 
                 if (leaf) {
-                    // console.log("leaf:\n", leaf)
-
 					if (!checking) {
 					    // 全部的 md 文件
                         const markdownFiles = vault.getMarkdownFiles();
@@ -65,18 +90,25 @@ export default class MyPlugin extends Plugin {
 
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
-		this.registerCodeMirror((cm: CodeMirror.Editor) => {
-			// console.log('codemirror', cm);
-		});
+		// this.registerCodeMirror((cm: CodeMirror.Editor) => {
+		// 	// console.log('codemirror', cm);
+		// });
 
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			// console.log('click', evt);
-		});
+		// this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
+		// 	// console.log('click', evt);
+		// });
 
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		// this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
-	onunload() {
+    private build_zk_prefix() {
+        const today = new Date();
+        let zk_prefix = format(today, "yyMMdd-HHmmss")
+        console.log(`zk_prefix: ${zk_prefix}`)
+        return zk_prefix;
+    }
+
+    onunload() {
 		console.log('unloading plugin');
 	}
 
