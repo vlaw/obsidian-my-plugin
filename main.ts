@@ -1,7 +1,10 @@
-import {App, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, View} from 'obsidian';
-import {compareAsc, format} from 'date-fns';
-import * as _ from "lodash";
+import {App, MarkdownView, Modal, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
+import {format} from 'date-fns';
+// import * as _ from "lodash";
 import * as CodeMirror from "codemirror";
+import * as crypto from 'crypto';
+import * as path from 'path';
+import {Utils} from "./utils";
 
 interface MyPluginSettings {
     mySetting: string;
@@ -10,6 +13,11 @@ interface MyPluginSettings {
 const DEFAULT_SETTINGS: MyPluginSettings = {
     mySetting: 'default'
 }
+
+function md5Buffer(buffer: ArrayBuffer) {
+    return crypto.createHash('md5').update(new DataView(buffer)).digest("hex");
+}
+
 export default class MyPlugin extends Plugin {
     settings: MyPluginSettings;
 
@@ -60,7 +68,7 @@ export default class MyPlugin extends Plugin {
                 if (tFile && tFile.extension == 'md') {
                     if (!checking) {
                         const fileName = tFile.name;
-                        const filePrefix = this.verifyAndGetPrefix(fileName);
+                        const filePrefix = Utils.verifyAndGetPrefix(fileName);
                         const fileCache = this.app.metadataCache.getFileCache(tFile);
                         const frontmatter = fileCache.frontmatter;
 
@@ -126,6 +134,77 @@ export default class MyPlugin extends Plugin {
             }
         });
 
+        this.addCommand({
+            // 修改文件关联的 assets (png/jpg/jpeg), 改成 md5
+            id: "update-assets-in-md-by-md5",
+            name: "update assets in md by md5",
+            checkCallback: (checking) => {
+                let md_tFile = this.app.workspace.getActiveFile();
+                // 打开文件是 markdown 文件才有可能需要这个命令
+                if (md_tFile && md_tFile.extension == 'md') {
+                    if (!checking) {
+                        const fileCache = this.app.metadataCache.getFileCache(md_tFile);
+                        const embeds = fileCache.embeds;
+                        // 文件的 zk-prefix, 就是 asset 的目标文件夹
+                        const assert_dir = Utils.verifyAndGetPrefix(md_tFile.name);
+
+                        for (let link of embeds) {
+                            // console.dir(link)
+                            const embed_tFile :TFile = this.app.metadataCache.getFirstLinkpathDest(link.link, "/");
+                            // console.log(embed_tFile);
+                            // console.log(embed_tFile.path);
+
+                            // 被闭包引用
+                            const app = this.app;
+                            const adapter = this.app.vault.adapter;
+                            const fileManager = this.app.fileManager;
+
+                            // fs Promise
+                            (async function() {
+                                try {
+                                    const buffer: ArrayBuffer = await adapter.readBinary(embed_tFile.path);
+
+                                    // console.dir(buffer);
+                                    // console.log(buffer.byteLength);
+
+                                    // md5
+                                    const fileMD5 = await md5Buffer(buffer);
+                                    // console.log(`md5: ${fileMD5}`);
+                                    console.log(`prefix: ${assert_dir}`);
+
+                                    const assert_dir_path = path.join(md_tFile.parent.path, 'assets', assert_dir);
+                                    if (!await adapter.exists(assert_dir_path)) {
+                                        await adapter.mkdir(assert_dir_path);
+                                    }
+                                    const newPath = path.join(assert_dir_path, fileMD5 + "." + embed_tFile.extension);
+                                    let fileDup = await adapter.exists(newPath);
+
+                                    if (!fileDup) {
+                                        // 文件名不重复(由于是 md5名, 同名意味着同一个文件
+
+                                    // 直接 rename file, 引用该 asset 的 md 文件没有跟随更新
+                                    // await adapter.rename(embed_tFile.path, newPath);
+
+                                    // Rename or move a file safely,
+                                    // and update all links to it depending on the user's preferences.
+                                    await fileManager.renameFile(embed_tFile, newPath);
+                                    } else {
+                                        // TODO: 需要改文件的文本, 没法直接使用 fileManager.renameFile
+                                        // https://github.com/lynchjames/note-refactor-obsidian/blob/ae41331959f65ebdc8a3b8afec91e2af0efaa2c9/src/main.ts#L138
+                                    }
+
+                                } catch (error) {
+                                    console.error('出错：', error.message);
+                                }
+                            })();
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+
         // 命令绑定, command palette => "My Plugin: Open Sample Modal"
         this.addCommand({
             id: 'open-sample-modal',
@@ -173,21 +252,6 @@ export default class MyPlugin extends Plugin {
         // });
 
         // this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-    }
-
-    private verifyAndGetPrefix(name: string): string {
-        if (name.length < 13) {
-            // 长度不够, 直接跳过
-            console.log(`file name: ${name} 长度不够`);
-            return null;
-        }
-        let prefix = name.substr(0, 13);
-        if (!prefix.match(/\d{6}-\d{6}/)) {
-            // 格式不对, 直接跳过
-            console.log(`file name: ${name} , prefix: ${prefix} 不合正则`);
-            return null;
-        }
-        return prefix;
     }
 
     private build_zk_prefix() {

@@ -61,9 +61,14 @@ See https://github.com/obsidianmd/obsidian-api
 
 1. md: XXXXXX-YYYYYY
 2. assets: assets/XXXXXX-YYYYYY/[md5].{suffix}
-### refactor
 
-
+### refactor commands
 
 - [ ] "rename assets by md5" ()
 - [ ] "extract assets in md into assets/ID folder"
+
+### references
+
+1. <https://github.com/Vinzent03/find-unlinked-files>
+1. <https://github.com/avirut/obsidian-metatemplates>
+1. <https://github.com/lynchjames/note-refactor-obsidian>
