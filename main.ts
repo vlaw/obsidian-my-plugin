@@ -205,6 +205,8 @@ export default class MyPlugin extends Plugin {
                 return false;
             }
         });
+
+        this.addSettingTab(new SampleSettingTab(this.app, this));
     }
 
     private build_zk_prefix() {
@@ -271,6 +273,7 @@ class SampleSettingTab extends PluginSettingTab {
         containerEl.empty();
 
         containerEl.createEl('h2', {text: 'Settings for my awesome plugin.(vlaw)'});
+        containerEl.createEl("h3", {text: `version: ${this.plugin.manifest.version}`})
 
         new Setting(containerEl)
             .setName('Setting #1')

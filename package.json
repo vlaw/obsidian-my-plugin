@@ -1,6 +1,6 @@
 {
   "name": "obsidian-my-plugin",
-  "version": "0.0.1",
+  "version": "0.1.0-beta",
   "description": "This is my plugin for Obsidian (https://obsidian.md)",
   "main": "main.js",
   "scripts": {
