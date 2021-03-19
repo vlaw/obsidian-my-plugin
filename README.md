@@ -64,8 +64,12 @@ See https://github.com/obsidianmd/obsidian-api
 
 ### refactor commands
 
-- [ ] "rename assets by md5" ()
-- [ ] "extract assets in md into assets/ID folder"
+- [X] "rename assets by md5" ()
+- [X] "extract assets in md into assets/ID folder"
+- [ ] "all in one", 一次全搞定
+- [ ] 直接 Git commit, 需要加开关
+- [ ] 左边按钮增加全局功能
+    - 查找未按约定布局的MD文件
 
 ### references
 

@@ -182,12 +182,12 @@ export default class MyPlugin extends Plugin {
                                     if (!fileDup) {
                                         // 文件名不重复(由于是 md5名, 同名意味着同一个文件
 
-                                    // 直接 rename file, 引用该 asset 的 md 文件没有跟随更新
-                                    // await adapter.rename(embed_tFile.path, newPath);
+                                        // 直接 rename file, 引用该 asset 的 md 文件没有跟随更新
+                                        // await adapter.rename(embed_tFile.path, newPath);
 
-                                    // Rename or move a file safely,
-                                    // and update all links to it depending on the user's preferences.
-                                    await fileManager.renameFile(embed_tFile, newPath);
+                                        // Rename or move a file safely,
+                                        // and update all links to it depending on the user's preferences.
+                                        await fileManager.renameFile(embed_tFile, newPath);
                                     } else {
                                         // TODO: 需要改文件的文本, 没法直接使用 fileManager.renameFile
                                         // https://github.com/lynchjames/note-refactor-obsidian/blob/ae41331959f65ebdc8a3b8afec91e2af0efaa2c9/src/main.ts#L138
