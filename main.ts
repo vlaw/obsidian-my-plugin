@@ -50,7 +50,7 @@ export default class MyPlugin extends Plugin {
                         if (!match) {
                             let zkPrefix = this.build_zk_prefix();
                             let newFileName = `${zkPrefix} ${fileName}`;
-                            this.app.vault.adapter.rename(tFile.path, newFileName);
+                            this.app.fileManager.renameFile(tFile, newFileName);
                         }
                     }
                     return true;
