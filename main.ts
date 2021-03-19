@@ -204,54 +204,6 @@ export default class MyPlugin extends Plugin {
                 return false;
             }
         });
-
-        // 命令绑定, command palette => "My Plugin: Open Sample Modal"
-        this.addCommand({
-            id: 'open-sample-modal',
-            name: 'Open Sample Modal',
-            // callback: () => {
-            // 	console.log('Simple Callback');
-            // },
-            checkCallback: (checking: boolean) => {
-                // Obsidian的 workspace 是支持 split 的
-                // leaf是编辑区(workspace)的一个编辑区区域(类似于Vim 中的 Window, Tmux 的 Pane
-                let leaf = this.app.workspace.activeLeaf;
-
-                const fm = this.app.fileManager;
-                const active_file = this.app.workspace.getActiveFile;
-                const vault = this.app.vault;
-                const vault_adaptor = vault.adapter;
-
-                if (leaf) {
-                    if (!checking) {
-                        // 全部的 md 文件
-                        const markdownFiles = vault.getMarkdownFiles();
-                        markdownFiles.forEach((markFile: TFile) => {
-                            console.log(markFile.path)
-                        })
-                        // 全部文件
-                        const files = vault.getFiles();
-                        console.log("全部文件:", files)
-
-                        // new SampleModal(this.app).open();
-                    }
-                    return true;
-                }
-                return false;
-            }
-        });
-
-        this.addSettingTab(new SampleSettingTab(this.app, this));
-
-        // this.registerCodeMirror((cm: CodeMirror.Editor) => {
-        // 	// console.log('codemirror', cm);
-        // });
-
-        // this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-        // 	// console.log('click', evt);
-        // });
-
-        // this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
     }
 
     private build_zk_prefix() {
