@@ -41,8 +41,8 @@ export default class MyPlugin extends Plugin {
             name: "Rename md by zk",
             checkCallback: (checking: boolean) => {
                 let tFile = this.app.workspace.getActiveFile();
-                // 打开文件是 markdown 文件才有可能需要这个命令
-                if (tFile && tFile.extension == 'md') {
+                // 打开文件是 markdown 文件, 并且是在编辑模式, 才显示这个命令
+                if (tFile && tFile.extension == 'md' && this.editModeGuard()) {
                     if (!checking) {
                         let fileName = tFile.name;
                         // match
@@ -65,7 +65,7 @@ export default class MyPlugin extends Plugin {
             checkCallback: (checking: boolean) => {
                 let tFile = this.app.workspace.getActiveFile();
                 // 打开文件是 markdown 文件才有可能需要这个命令
-                if (tFile && tFile.extension == 'md') {
+                if (tFile && tFile.extension == 'md' && this.editModeGuard()) {
                     if (!checking) {
                         const fileName = tFile.name;
                         const filePrefix = Utils.verifyAndGetPrefix(fileName);
@@ -141,7 +141,7 @@ export default class MyPlugin extends Plugin {
             checkCallback: (checking) => {
                 let md_tFile = this.app.workspace.getActiveFile();
                 // 打开文件是 markdown 文件才有可能需要这个命令
-                if (md_tFile && md_tFile.extension == 'md') {
+                if (md_tFile && md_tFile.extension == 'md' && this.editModeGuard()) {
                     if (!checking) {
                         const fileCache = this.app.metadataCache.getFileCache(md_tFile);
                         const embeds = fileCache.embeds;
@@ -259,6 +259,18 @@ export default class MyPlugin extends Plugin {
         let zk_prefix = format(today, "yyMMdd-HHmmss")
         console.log(`zk_prefix: ${zk_prefix}`)
         return zk_prefix;
+    }
+
+    private editModeGuard(): boolean {
+        const mdView = this.app.workspace.activeLeaf.view as MarkdownView;
+        if(!mdView || mdView.getMode() !== 'source') {
+            // 通常情况, 不用触发, 直接在非编辑模式屏蔽这个后续的命令(checking)
+            // new Notification(`Please use ${this.manifest.name}  in edit mode`, {
+            //     timestamp: _.now()
+            // });
+            return false;
+        }
+        return true;
     }
 
     onunload() {
