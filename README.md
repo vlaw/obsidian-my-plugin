@@ -70,6 +70,9 @@ See https://github.com/obsidianmd/obsidian-api
 - [ ] 直接 Git commit, 需要加开关
 - [ ] 左边按钮增加全局功能
     - 查找未按约定布局的MD文件
+- [ ] bug: assets移动后, 如果是两层目录, 会导致无法展开
+- [X] feat: 将 'rename md by zk' 改名为 'update filename by zk'
+- [X] bug: update filename 丢失了 path, 导致文件重命名成功, 但同时移动到了Vault根
 
 ### references
 

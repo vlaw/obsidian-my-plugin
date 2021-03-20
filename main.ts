@@ -37,8 +37,8 @@ export default class MyPlugin extends Plugin {
 
         // 命令绑定, command palette => "My Plugin: Rename md by zk"
         this.addCommand({
-            id: "rename-md-by-zk",
-            name: "Rename md by zk",
+            id: "update-filename-by-zk",
+            name: "Update filename by zk",
             checkCallback: (checking: boolean) => {
                 let tFile = this.app.workspace.getActiveFile();
                 // 打开文件是 markdown 文件, 并且是在编辑模式, 才显示这个命令
@@ -49,7 +49,8 @@ export default class MyPlugin extends Plugin {
                         let match = fileName.match(/^\d{6}\-\d{6} /);
                         if (!match) {
                             let zkPrefix = this.build_zk_prefix();
-                            let newFileName = `${zkPrefix} ${fileName}`;
+                            let newFileName = path.join(tFile.parent.path, `${zkPrefix} ${fileName}`);
+                            console.log(`new file name: ${newFileName}`);
                             this.app.fileManager.renameFile(tFile, newFileName);
                         }
                     }
