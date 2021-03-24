@@ -62,7 +62,7 @@ export default class MyPlugin extends Plugin {
 
         this.addCommand({
             id: "update-meta-by-zk",
-            name: "Update Meta ID by ZK",
+            name: "Update Meta by ZK",
             checkCallback: (checking: boolean) => {
                 let tFile = this.app.workspace.getActiveFile();
                 // 打开文件是 markdown 文件才有可能需要这个命令
