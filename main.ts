@@ -22,8 +22,6 @@ export default class MyPlugin extends Plugin {
     settings: MyPluginSettings;
 
     async onload() {
-        console.log(`loading plugin: ${this.manifest.name}(${this.manifest.id}): ${this.manifest.version} ts: ${new Date()}`);
-
         await this.loadSettings();
 
         // // RibbonIcon: 左侧侧边栏 icon
@@ -50,7 +48,6 @@ export default class MyPlugin extends Plugin {
                         if (!match) {
                             let zkPrefix = this.build_zk_prefix();
                             let newFileName = path.join(tFile.parent.path, `${zkPrefix} ${fileName}`);
-                            console.log(`new file name: ${newFileName}`);
                             this.app.fileManager.renameFile(tFile, newFileName);
                         }
                     }
@@ -97,21 +94,16 @@ export default class MyPlugin extends Plugin {
                             content_array.splice(0, 0, "---", `ID: ${filePrefix}`, "---", SEP);
                         } else {
                             const meta_id = frontmatter['ID'];
-                            console.log(`meta_id: ${meta_id}`);
                             let pos = frontmatter.position;
                             if (!meta_id) {
                                 // Y.N 有frontmatter , 但没有 "ID", insert
-                                console.log("有frontmatter , 但没有 \"ID\", insert")
                                 content_array.splice(pos.start.line + 1, 0, `ID: ${filePrefix}`);
-                                console.log(`content array: ${content_array}`);
                             } else {
                                 // Y.Y 有 frontmatter (aka. meta) 中, 并且存在"ID", 检查是否相等
                                 if (meta_id != filePrefix) {
                                     // Y.Y.N: 有frontmatter, 有 ID, 且 ID 不匹配 filePrefix
-                                    console.log(`meta_id and prefix are not equal, do update~`)
                                     // 找到 ID 行, update_id
                                     let split_meta_part = content_array.slice(pos.start.line, pos.end.line + 1);
-                                    console.log(`split_meta_part: ${split_meta_part}`);
                                     for (let i = pos.start.line; i < pos.end.line + 1; i++) {
                                         let line = content_array[i];
                                         if (line.toUpperCase().startsWith("ID: ")) {
@@ -120,7 +112,6 @@ export default class MyPlugin extends Plugin {
                                     }
                                 } else {
                                     // Y.Y.Y: 有frontmatter, 有 ID, 且 ID 匹配 filePrefix
-                                    console.log(`meta_id and prefix are equal, which is ${meta_id}, do nothing!`);
                                 }
                             }
                         }
@@ -150,10 +141,7 @@ export default class MyPlugin extends Plugin {
                         const assert_dir = Utils.verifyAndGetPrefix(md_tFile.name);
 
                         for (let link of embeds) {
-                            // console.dir(link)
                             const embed_tFile :TFile = this.app.metadataCache.getFirstLinkpathDest(link.link, "/");
-                            // console.log(embed_tFile);
-                            // console.log(embed_tFile.path);
 
                             // 被闭包引用
                             const app = this.app;
@@ -165,13 +153,8 @@ export default class MyPlugin extends Plugin {
                                 try {
                                     const buffer: ArrayBuffer = await adapter.readBinary(embed_tFile.path);
 
-                                    // console.dir(buffer);
-                                    // console.log(buffer.byteLength);
-
                                     // md5
                                     const fileMD5 = await md5Buffer(buffer);
-                                    // console.log(`md5: ${fileMD5}`);
-                                    console.log(`prefix: ${assert_dir}`);
 
                                     const assert_dir_path = path.join(md_tFile.parent.path, 'assets', assert_dir);
                                     if (!await adapter.exists(assert_dir_path)) {
@@ -212,7 +195,6 @@ export default class MyPlugin extends Plugin {
     private build_zk_prefix() {
         const today = new Date();
         let zk_prefix = format(today, "yyMMdd-HHmmss")
-        console.log(`zk_prefix: ${zk_prefix}`)
         return zk_prefix;
     }
 
@@ -229,7 +211,6 @@ export default class MyPlugin extends Plugin {
     }
 
     onunload() {
-        console.log('unloading plugin');
     }
 
     async loadSettings() {
@@ -282,7 +263,6 @@ class SampleSettingTab extends PluginSettingTab {
                 .setPlaceholder('Enter your secret')
                 .setValue('')
                 .onChange(async (value) => {
-                    console.log('Secret: ' + value);
                     this.plugin.settings.mySetting = value;
                     await this.plugin.saveSettings();
                 }));
