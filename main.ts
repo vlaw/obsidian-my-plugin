@@ -148,6 +148,10 @@ export default class MyPlugin extends Plugin {
                         const embeds = fileCache.embeds;
                         // 文件的 zk-prefix, 就是 asset 的目标文件夹
                         const assert_dir = Utils.verifyAndGetPrefix(md_tFile.name);
+                        if (!assert_dir){
+                            new AlertModal(this.app).open();
+                            return false;
+                        }
 
                         for (let link of embeds) {
                             // console.dir(link)
@@ -241,15 +245,19 @@ export default class MyPlugin extends Plugin {
     }
 }
 
-class SampleModal extends Modal {
+class AlertModal extends Modal {
     // 模态窗口
     constructor(app: App) {
         super(app);
     }
 
     onOpen() {
-        let {contentEl} = this;
-        contentEl.setText('Woah!');
+        let {titleEl, contentEl} = this;
+        titleEl.setText("ERROR");
+        let tFile = this.app.workspace.getActiveFile();
+        contentEl.setText(`Woah! ${tFile.name} 不符合规范!`);
+
+
     }
 
     onClose() {
