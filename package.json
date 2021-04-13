@@ -1,14 +1,17 @@
 {
   "name": "obsidian-my-plugin",
-  "version": "0.1.0-beta",
+  "version": "0.1.0",
   "description": "This is my plugin for Obsidian (https://obsidian.md)",
   "main": "main.js",
   "scripts": {
     "dev": "rollup --config rollup.config.js -w",
     "build": "rollup --config rollup.config.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "Zettelkasten",
+    "Refactory"
+  ],
+  "author": "vlaw",
   "license": "MIT",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^15.1.0",
