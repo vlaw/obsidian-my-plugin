@@ -68,11 +68,12 @@ $ tree
 - [ ] 如果MD5撞车（多次引用同一文件），可能无效
 
 
-### references及配套
+### 配套插件
 
-1. https://github.com/ozntel/oz-clear-unused-images-obsidian
-1. https://github.com/derwish-pro/obsidian-consistent-attachments-and-links
-1. <https://github.com/lynchjames/note-refactor-obsidian>
+1. [Obsidian Plugin for Clearing Unused Images](https://github.com/ozntel/oz-clear-unused-images-obsidian) *清理无引用的图片文件*
+1. [Consistent attachments and links](https://github.com/derwish-pro/obsidian-consistent-attachments-and-links)
+    1. *检查文件中引用的附件是否完整*， Run "Check vault consistent" command and see the report.
+    2. https://github.com/derwish-pro/obsidian-consistent-attachments-and-links#how-to-check-the-consistency-of-the-library
 
 ---
 
