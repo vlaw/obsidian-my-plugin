@@ -17,7 +17,8 @@
 1. md文件前缀: `XXXXXX-YYYYYY`, 前六位年月日，后六位时分秒，如：`211203-182813`
 2. assets: assets/`XXXXXX-YYYYYY[对应的md文件前缀]`/[md5].{suffix}
 
-```
+```shell
+# 某一个子目录的内容
 $ tree
 .
 ├── 210415-201003\ git\ internal\ -\ References\ -\ .git_refs.md
@@ -64,7 +65,7 @@ $ tree
 
 ## TODO 或 已知bug
 
-- [ ] "all in one", 一次全搞定（懒，不想搞）
+- [ ] "all in one", 一键全搞定（懒，不想搞了）
 - [ ] 如果MD5撞车（多次引用同一文件），可能无效
 
 
