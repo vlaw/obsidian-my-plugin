@@ -1,6 +1,6 @@
-import {App, MarkdownView, Modal, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
+import {App, DataAdapter, MarkdownView, Modal, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
 import {format} from 'date-fns';
-// import * as _ from "lodash";
+import * as _ from "lodash";
 import * as CodeMirror from "codemirror";
 import * as crypto from 'crypto';
 import * as path from 'path';
@@ -75,7 +75,9 @@ export default class MyPlugin extends Plugin {
 
                         // https://github.com/avirut/obsidian-metatemplates/blob/1a40b90c350a892248a21883b9a600473fdd89fc/main.ts#L123
                         const active_view: MarkdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                        // @ts-ignore TS2339
                         const editor: CodeMirror.Editor = active_view.sourceMode.cmEditor;
+                        if (!editor) throw new Error("CodeMirrorAPI修改?")
                         const SEP = editor.lineSeparator();
 
                         // content 相关的读取
@@ -148,14 +150,17 @@ export default class MyPlugin extends Plugin {
                         const embeds = fileCache.embeds;
                         // 文件的 zk-prefix, 就是 asset 的目标文件夹
                         const assert_dir = Utils.verifyAndGetPrefix(md_tFile.name);
-                        if (!assert_dir){
+                        if (!assert_dir) {
                             new AlertModal(this.app).open();
                             return false;
                         }
+                        // - 两个文件可能存在相同的md5
+                        // - [X] 一个markdown文件中，也可能两次引用同一个文件
+                        let uniq_embeds = _.uniqBy(embeds, 'link')
 
-                        for (let link of embeds) {
+                        for (let link of uniq_embeds) {
                             // console.dir(link)
-                            const embed_tFile :TFile = this.app.metadataCache.getFirstLinkpathDest(link.link, "/");
+                            const embed_tFile: TFile = this.app.metadataCache.getFirstLinkpathDest(link.link, "/");
                             // console.log(embed_tFile);
                             // console.log(embed_tFile.path);
 
@@ -165,7 +170,7 @@ export default class MyPlugin extends Plugin {
                             const fileManager = this.app.fileManager;
 
                             // fs Promise
-                            (async function() {
+                            (async function () {
                                 try {
                                     const buffer: ArrayBuffer = await adapter.readBinary(embed_tFile.path);
 
@@ -222,7 +227,7 @@ export default class MyPlugin extends Plugin {
 
     private editModeGuard(): boolean {
         const mdView = this.app.workspace.activeLeaf.view as MarkdownView;
-        if(!mdView || mdView.getMode() !== 'source') {
+        if (!mdView || mdView.getMode() !== 'source') {
             // 通常情况, 不用触发, 直接在非编辑模式屏蔽这个后续的命令(checking)
             // new Notification(`Please use ${this.manifest.name}  in edit mode`, {
             //     timestamp: _.now()
