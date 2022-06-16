@@ -5,13 +5,13 @@ export class Utils {
      * @remarks
      * This method is part of the {@link core-library#Statistics | Statistics subsystem}.
      *
-     * @param name - 
+     * @param name - 文件名字符串
      */
     public static verifyAndGetPrefix(name: string): string {
         if (name.length < 13) {
             // 长度不够, 直接跳过
             // FIXME: 不见得就是filename
-            console.log(`file name: ${name} 长度不够`); 
+            console.log(`file name: ${name} 长度不够`);
             return null;
         }
         let prefix = name.substr(0, 13);

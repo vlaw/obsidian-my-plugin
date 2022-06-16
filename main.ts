@@ -1,14 +1,15 @@
-import { App, DataAdapter, MarkdownView, Modal, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
-// import { parseYaml } from "obsidian";
-// import { Notice } from "obsidian";
+import * as crypto from 'crypto';
+import * as path from 'path';
+
+// DataAdapter, parseYaml, Notice
+import { App,  MarkdownView, Modal, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 
 import { format } from 'date-fns';
 import * as _ from "lodash";
-import * as CodeMirror from "codemirror";
-import * as crypto from 'crypto';
-import * as path from 'path';
 import { Utils } from "./utils";
-import { values } from 'lodash';
+
+// import * as CodeMirror from "codemirror";
+// import { values } from 'lodash';
 
 interface MyPluginSettings {
     mySetting: string;
