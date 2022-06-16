@@ -1,10 +1,24 @@
-import {App, DataAdapter, MarkdownView, Modal, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
-import {format} from 'date-fns';
-import * as _ from "lodash";
-import * as CodeMirror from "codemirror";
-import * as crypto from 'crypto';
+// node module
+// -----------
 import * as path from 'path';
-import {Utils} from "./utils";
+
+// Obsidian API
+// ------------
+// DataAdapter, parseYaml, Notice
+import { App, MarkdownView, Plugin, TFile } from 'obsidian';
+// import * as CodeMirror from "codemirror";
+
+// third-party module
+// ------------------
+import { format } from 'date-fns';
+import * as _ from "lodash";
+
+// project module
+// --------------
+import { md5Buffer, verifyAndGetPrefix } from "./utils";
+import AlertModal from './AlertModal';
+import SampleSettingTab from './SampleSettingTab';
+
 
 interface MyPluginSettings {
     mySetting: string;
@@ -14,10 +28,65 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
     mySetting: 'default'
 }
 
-function md5Buffer(buffer: ArrayBuffer) {
-    return crypto.createHash('md5').update(new DataView(buffer)).digest("hex");
-}
+async function syncFrontMatterKeyID(app: App,
+    file: TFile,
+    propKey: string,
+    propValue: string): Promise<void> {
 
+    const fileContent: string = await app.vault.read(file);
+    let splitContent = fileContent.split("\n");
+
+    const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+
+    // 判断是否有这个YAML的FrontMatter
+    const isYamlEmpty: boolean = ((!frontmatter || frontmatter.length === 0)
+        && !fileContent.match(/^-{3}\s*\n*\r*-{3}/));
+    if (isYamlEmpty) {
+        console.log(`File '${file.name}' has no frontmatter.`);
+        function prependNewFrontMatter(splitContent: string[],
+            propKey: string,
+            propValue: string): void {
+
+            // 前置插入一个完整的yaml frontmatter
+            splitContent.unshift("---");
+            splitContent.unshift(`${propKey}: ${propValue}`);
+            splitContent.unshift("---");
+        }
+        prependNewFrontMatter(splitContent, propKey, propValue);
+    } else {
+        // 有frontmatter, 有无这个key: `ID`
+
+        // 取出frontmatter的文本, 除非value相等, 否则需要重建YAML(改ID的值、插入新行)
+        // 解构起始行
+        const { position: { start, end } } = frontmatter;
+        const yamlContent: string[] = splitContent.slice(start.line, end.line);
+
+        if (frontmatter["ID"]) {
+            // 已经有这个key: `ID`
+            const existedID = frontmatter["ID"];
+            if (existedID === propValue) {
+                // Do nothing
+                return
+            } else {
+                // 更新: 原来的key: `ID`
+                function updateID(yamlContent: string[], propValue: string): void {
+                    const index = yamlContent.findIndex(value => value.match(/^ID:/));
+                    yamlContent[index] = `ID: ${propValue}`;
+                }
+                updateID(yamlContent, propValue);
+            }
+        } else {
+            // 没有这个key: `ID`, 插入新行
+            yamlContent.splice(1, 0, `ID: ${propValue}`);
+        }
+
+        splitContent.splice(start.line, end.line - start.line, ...yamlContent);
+
+    }
+    // 替换为新的YAML
+    const newFileContent = splitContent.join("\n");
+    await app.vault.modify(file, newFileContent);
+}
 export default class MyPlugin extends Plugin {
     settings: MyPluginSettings;
 
@@ -26,19 +95,10 @@ export default class MyPlugin extends Plugin {
 
         await this.loadSettings();
 
-        // // RibbonIcon: 左侧侧边栏 icon
-        // this.addRibbonIcon('dice', 'Sample Plugin', () => {
-        // 	//  Notice: 右上方通知栏
-        // 	new Notice('This is a notice!');
-        // });
-
-        // // StatusBarItem: 右下方状态栏
-        // this.addStatusBarItem().setText('Status Bar Text');
-
         // 命令绑定, command palette => "My Plugin: Rename md by zk"
         this.addCommand({
             id: "update-filename-by-zk",
-            name: "Update filename by zk",
+            name: "Update filename by zk (v2)",
             checkCallback: (checking: boolean) => {
                 let tFile = this.app.workspace.getActiveFile();
                 // 打开文件是 markdown 文件, 并且是在编辑模式, 才显示这个命令
@@ -47,89 +107,18 @@ export default class MyPlugin extends Plugin {
                         let fileName = tFile.name;
                         // match
                         let match = fileName.match(/^\d{6}\-\d{6} /);
+                        let zkPrefix;
                         if (!match) {
-                            let zkPrefix = this.build_zk_prefix();
+                            zkPrefix = this.build_zk_prefix();
                             let newFileName = path.join(tFile.parent.path, `${zkPrefix} ${fileName}`);
                             console.log(`new file name: ${newFileName}`);
                             this.app.fileManager.renameFile(tFile, newFileName);
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            }
-        });
-
-        this.addCommand({
-            id: "update-meta-by-zk",
-            name: "Update Meta by ZK",
-            checkCallback: (checking: boolean) => {
-                let tFile = this.app.workspace.getActiveFile();
-                // 打开文件是 markdown 文件才有可能需要这个命令
-                if (tFile && tFile.extension == 'md' && this.editModeGuard()) {
-                    if (!checking) {
-                        const fileName = tFile.name;
-                        const filePrefix = Utils.verifyAndGetPrefix(fileName);
-                        const fileCache = this.app.metadataCache.getFileCache(tFile);
-                        const frontmatter = fileCache.frontmatter;
-
-                        // https://github.com/avirut/obsidian-metatemplates/blob/1a40b90c350a892248a21883b9a600473fdd89fc/main.ts#L123
-                        const active_view: MarkdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                        // @ts-ignore TS2339
-                        const editor: CodeMirror.Editor = active_view.sourceMode.cmEditor;
-                        if (!editor) throw new Error("CodeMirrorAPI修改?")
-                        const SEP = editor.lineSeparator();
-
-                        // content 相关的读取
-                        let doc: CodeMirror.Doc = editor.getDoc();
-                        let content = doc.getValue();
-                        let content_array: string[] = content.split("\n");
-
-                        /*
-                        # 执行检查及更新
-                        - N. _没有_ frontmatter (aka. meta) , => 在顶部插入三行 meta
-                        - Y.
-                            - N. 有frontmatter, 但 _没有 "ID"_ => insert
-                            - Y. 有frontmatter, 并且存在"ID"
-                                - N. 有frontmatter, 有ID, 但 _ID 不匹配 prefix_ => update
-                                - Y. 有frontmatter, 有ID, 且 ID 匹配 filePrefix => do NOTHING
-                         */
-                        if (!frontmatter) {
-                            // N. 没有 frontmatter, 在顶部插入三行 meta
-                            content_array.splice(0, 0, "---", `ID: ${filePrefix}`, "---", SEP);
                         } else {
-                            const meta_id = frontmatter['ID'];
-                            console.log(`meta_id: ${meta_id}`);
-                            let pos = frontmatter.position;
-                            if (!meta_id) {
-                                // Y.N 有frontmatter , 但没有 "ID", insert
-                                console.log("有frontmatter , 但没有 \"ID\", insert")
-                                content_array.splice(pos.start.line + 1, 0, `ID: ${filePrefix}`);
-                                console.log(`content array: ${content_array}`);
-                            } else {
-                                // Y.Y 有 frontmatter (aka. meta) 中, 并且存在"ID", 检查是否相等
-                                if (meta_id != filePrefix) {
-                                    // Y.Y.N: 有frontmatter, 有 ID, 且 ID 不匹配 filePrefix
-                                    console.log(`meta_id and prefix are not equal, do update~`)
-                                    // 找到 ID 行, update_id
-                                    let split_meta_part = content_array.slice(pos.start.line, pos.end.line + 1);
-                                    console.log(`split_meta_part: ${split_meta_part}`);
-                                    for (let i = pos.start.line; i < pos.end.line + 1; i++) {
-                                        let line = content_array[i];
-                                        if (line.toUpperCase().startsWith("ID: ")) {
-                                            content_array[i] = `ID: ${filePrefix}`;
-                                        }
-                                    }
-                                } else {
-                                    // Y.Y.Y: 有frontmatter, 有 ID, 且 ID 匹配 filePrefix
-                                    console.log(`meta_id and prefix are equal, which is ${meta_id}, do nothing!`);
-                                }
-                            }
+                            // get zk prefix from file name
+                            zkPrefix = fileName.match(/^\d{6}\-\d{6} /)[0].replace(/ /g, '');
                         }
 
-                        doc.setValue(content_array.join("\n"));
-                        editor.focus();
-                        editor.refresh();
+                        syncFrontMatterKeyID(this.app, tFile, "ID", zkPrefix);
                     }
                     return true;
                 }
@@ -149,7 +138,7 @@ export default class MyPlugin extends Plugin {
                         const fileCache = this.app.metadataCache.getFileCache(md_tFile);
                         const embeds = fileCache.embeds;
                         // 文件的 zk-prefix, 就是 asset 的目标文件夹
-                        const assert_dir = Utils.verifyAndGetPrefix(md_tFile.name);
+                        const assert_dir = verifyAndGetPrefix(md_tFile.name);
                         if (!assert_dir) {
                             new AlertModal(this.app).open();
                             return false;
@@ -247,57 +236,5 @@ export default class MyPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
-    }
-}
-
-class AlertModal extends Modal {
-    // 模态窗口
-    constructor(app: App) {
-        super(app);
-    }
-
-    onOpen() {
-        let {titleEl, contentEl} = this;
-        titleEl.setText("ERROR");
-        let tFile = this.app.workspace.getActiveFile();
-        contentEl.setText(`Woah! ${tFile.name} 不符合规范!`);
-
-
-    }
-
-    onClose() {
-        let {contentEl} = this;
-        contentEl.empty();
-    }
-}
-
-class SampleSettingTab extends PluginSettingTab {
-    // 插件配置 Tab
-    plugin: MyPlugin;
-
-    constructor(app: App, plugin: MyPlugin) {
-        super(app, plugin);
-        this.plugin = plugin;
-    }
-
-    display(): void {
-        let {containerEl} = this;
-
-        containerEl.empty();
-
-        containerEl.createEl('h2', {text: 'Settings for my awesome plugin.(vlaw)'});
-        containerEl.createEl("h3", {text: `version: ${this.plugin.manifest.version}`})
-
-        new Setting(containerEl)
-            .setName('Setting #1')
-            .setDesc('It\'s a secret')
-            .addText(text => text
-                .setPlaceholder('Enter your secret')
-                .setValue('')
-                .onChange(async (value) => {
-                    console.log('Secret: ' + value);
-                    this.plugin.settings.mySetting = value;
-                    await this.plugin.saveSettings();
-                }));
     }
 }
