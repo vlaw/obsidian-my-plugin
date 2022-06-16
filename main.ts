@@ -1,15 +1,22 @@
-import * as crypto from 'crypto';
+// node module
+// -----------
 import * as path from 'path';
 
+// Obsidian API
+// ------------
 // DataAdapter, parseYaml, Notice
 import { App,  MarkdownView, Modal, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+// import * as CodeMirror from "codemirror";
 
+// third-party module
+// ------------------
 import { format } from 'date-fns';
 import * as _ from "lodash";
-import { Utils } from "./utils";
 
-// import * as CodeMirror from "codemirror";
-// import { values } from 'lodash';
+// project module
+// --------------
+import { md5Buffer, verifyAndGetPrefix } from "./utils";
+
 
 interface MyPluginSettings {
     mySetting: string;
@@ -17,10 +24,6 @@ interface MyPluginSettings {
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
     mySetting: 'default'
-}
-
-function md5Buffer(buffer: ArrayBuffer) {
-    return crypto.createHash('md5').update(new DataView(buffer)).digest("hex");
 }
 
 async function syncFrontMatterKeyID(app: App,
@@ -133,7 +136,7 @@ export default class MyPlugin extends Plugin {
                         const fileCache = this.app.metadataCache.getFileCache(md_tFile);
                         const embeds = fileCache.embeds;
                         // 文件的 zk-prefix, 就是 asset 的目标文件夹
-                        const assert_dir = Utils.verifyAndGetPrefix(md_tFile.name);
+                        const assert_dir = verifyAndGetPrefix(md_tFile.name);
                         if (!assert_dir) {
                             new AlertModal(this.app).open();
                             return false;
